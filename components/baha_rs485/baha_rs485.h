@@ -179,6 +179,9 @@ class BahaRS485Component : public Component, public uart::UARTDevice {
 
   std::array<float, ROOM_COUNT> current_temperatures_{{NAN, NAN, NAN, NAN, NAN}};
   std::array<float, ROOM_COUNT> target_temperatures_{{NAN, NAN, NAN, NAN, NAN}};
+  // Keep each table's mode with its cached value; 81 and 85 arrive separately.
+  std::array<bool, ROOM_COUNT> current_away_{};
+  std::array<bool, ROOM_COUNT> target_away_{};
 
   uint8_t light_mask_{0};
   bool light_mask_known_{false};
