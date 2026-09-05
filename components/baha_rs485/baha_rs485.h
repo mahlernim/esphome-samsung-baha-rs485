@@ -179,6 +179,7 @@ class BahaRS485Component : public Component, public uart::UARTDevice {
 
   std::array<float, ROOM_COUNT> current_temperatures_{{NAN, NAN, NAN, NAN, NAN}};
   std::array<float, ROOM_COUNT> target_temperatures_{{NAN, NAN, NAN, NAN, NAN}};
+  std::array<bool, ROOM_COUNT> target_away_{};
 
   uint8_t light_mask_{0};
   bool light_mask_known_{false};
