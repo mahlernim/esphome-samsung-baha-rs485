@@ -122,7 +122,8 @@ void BahaRS485Component::request_heater_state(uint8_t room, bool state, int8_t o
   const int target = this->clamp_temperature_(current + delta);
 
   // A normal-mode write must still leave Away when the numeric target matches.
-  if (!this->target_away_[room] && !std::isnan(this->target_temperatures_[room]) &&
+  if (!this->current_away_[room] && !this->target_away_[room] &&
+      !std::isnan(this->target_temperatures_[room]) &&
       static_cast<int>(std::lround(this->target_temperatures_[room])) == target) {
     return;
   }
@@ -299,6 +300,7 @@ void BahaRS485Component::handle_heater_current_(const std::vector<uint8_t> &payl
   }
 
   for (uint8_t room = 0; room < ROOM_COUNT; room++) {
+    this->current_away_[room] = (payload[room + 1] & 0xC0) == 0xC0;
     const float value = this->decode_temperature_(payload[room + 1]);
     this->current_temperatures_[room] = value;
     this->publish_temperature_(room, SENSOR_KIND_CURRENT_TEMPERATURE, value);

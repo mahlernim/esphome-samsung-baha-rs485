@@ -124,9 +124,14 @@ void equal_temperature_mode_change(bool on) {
   f.bus.request_heater_state(0, on, 1, -2);
   expect_write(f.bus, "02 40 90 02 06 00 8A 00 00 00 00 5C 00");
 
-  // A normal-mode readback clears the Away flag; duplicates can then be skipped.
+  // Both table snapshots must be normal before duplicates can be skipped.
   f.bus.clear_queue();
   f.bus.feed(hex("02 40 90 85 06 02 8A CA CA CA CA D9 00"));
+  f.bus.request_heater_state(0, on, 1, -2);
+  expect_write(f.bus, "02 40 90 02 06 00 8A 00 00 00 00 5C 00");
+  f.bus.clear_queue();
+  f.bus.feed(hex(on ? "02 40 90 81 06 02 89 CA CA CA CA DE 00"
+                   : "02 40 90 81 06 02 8C CA CA CA CA DB 00"));
   f.bus.request_heater_state(0, on, 1, -2);
   require(f.bus.queued().empty(), "unchanged normal setpoint should be deduplicated");
 }
@@ -137,6 +142,28 @@ void normal_write() {
   f.bus.feed(NORMAL_TARGET);
   f.bus.request_heater_state(2, true, 1, -2);
   expect_write(f.bus, "02 40 90 02 06 00 00 00 A1 00 00 77 00");
+}
+
+void current_table_mode_change() {
+  Fixture f;
+  // Synthetic sequence: the current table reports Away before the target table.
+  f.bus.feed(hex("02 40 90 81 06 02 89 CA CA CA CA DE 00"));
+  f.bus.feed(hex("02 40 90 85 06 02 8A CA CA CA CA D9 00"));
+  f.bus.request_heater_state(0, true, 1, -2);
+  require(f.bus.queued().empty(), "unchanged normal target should be skipped");
+  f.bus.feed(hex("02 40 90 81 06 03 C9 CA CA CA CA 9F 00"));
+  f.bus.request_heater_state(0, true, 1, -2);
+  expect_write(f.bus, "02 40 90 02 06 00 8A 00 00 00 00 5C 00");
+}
+
+void current_normal_with_away_target() {
+  Fixture f;
+  f.bus.feed(hex("02 40 90 81 06 03 C9 CA CA CA CA 9F 00"));
+  f.bus.feed(hex("02 40 90 85 06 03 CA CA CA CA CA 98 00"));
+  // A normal current table does not prove the cached Away target is still valid.
+  f.bus.feed(hex("02 40 90 81 06 02 89 CA CA CA CA DE 00"));
+  f.bus.request_heater_state(0, true, 1, -2);
+  expect_write(f.bus, "02 40 90 02 06 00 8A 00 00 00 00 5C 00");
 }
 
 void switch_demand() {
@@ -161,7 +188,10 @@ int main() {
       {"Away Off writes 30 C", [] { away_write(false); }},
       {"equal target On exits Away", [] { equal_temperature_mode_change(true); }},
       {"equal target Off exits Away", [] { equal_temperature_mode_change(false); }},
-      {"normal write unchanged", normal_write}, {"switch demand", switch_demand},
+      {"normal write unchanged", normal_write},
+      {"current table updates Away mode", current_table_mode_change},
+      {"normal current keeps Away target provenance", current_normal_with_away_target},
+      {"switch demand", switch_demand},
       {"raw-byte compatibility", raw_byte_compatibility}};
   size_t failures = 0;
   for (const auto &test : tests) {
