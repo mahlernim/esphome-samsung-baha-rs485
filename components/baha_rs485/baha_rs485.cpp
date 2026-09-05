@@ -1,6 +1,7 @@
 #include "baha_rs485.h"
 
 #include <algorithm>
+#include <cinttypes>
 
 #include "esphome/core/log.h"
 
@@ -50,12 +51,12 @@ void BahaRS485Component::loop() {
 
 void BahaRS485Component::dump_config() {
   ESP_LOGCONFIG(TAG, "BAHA RS485");
-  ESP_LOGCONFIG(TAG, "  Stale timeout: %u ms", this->stale_timeout_ms_);
-  ESP_LOGCONFIG(TAG, "  Startup listen window: %u ms", this->startup_listen_window_ms_);
-  ESP_LOGCONFIG(TAG, "  Poll retry interval: %u ms", this->poll_retry_interval_ms_);
-  ESP_LOGCONFIG(TAG, "  Idle before TX: %u ms", this->idle_before_tx_ms_);
-  ESP_LOGCONFIG(TAG, "  Inter-frame gap: %u ms", this->inter_frame_gap_ms_);
-  ESP_LOGCONFIG(TAG, "  Post-write readback: %u ms", this->post_write_readback_ms_);
+  ESP_LOGCONFIG(TAG, "  Stale timeout: %" PRIu32 " ms", this->stale_timeout_ms_);
+  ESP_LOGCONFIG(TAG, "  Startup listen window: %" PRIu32 " ms", this->startup_listen_window_ms_);
+  ESP_LOGCONFIG(TAG, "  Poll retry interval: %" PRIu32 " ms", this->poll_retry_interval_ms_);
+  ESP_LOGCONFIG(TAG, "  Idle before TX: %" PRIu32 " ms", this->idle_before_tx_ms_);
+  ESP_LOGCONFIG(TAG, "  Inter-frame gap: %" PRIu32 " ms", this->inter_frame_gap_ms_);
+  ESP_LOGCONFIG(TAG, "  Post-write readback: %" PRIu32 " ms", this->post_write_readback_ms_);
   this->check_uart_settings(9600, 1, uart::UART_CONFIG_PARITY_NONE, 8);
 }
 
